@@ -339,6 +339,22 @@ class TimeUnit:
             # self.preferFuture(4)
             self.isAllDayTime = False
 
+    def nrom_tail(self):
+        rule = u"(月底|月末)"
+        pattern = re.compile(rule)
+        match = pattern.search(self.exp_time)
+        if match is not None:
+            self.tp.tunit[2] = 28
+            self.isAllDayTime = False
+
+    def nrom_tail(self):
+        rule = u"(月初|月首)"
+        pattern = re.compile(rule)
+        match = pattern.search(self.exp_time)
+        if match is not None:
+            self.tp.tunit[2] = 1
+            self.isAllDayTime = False
+
     def norm_setsecond(self):
         """
         添加了省略“秒”说法的时间：如17点15分32
