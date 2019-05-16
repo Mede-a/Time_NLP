@@ -46,8 +46,6 @@ class TimeUnit:
         self.norm_setSpecial()
         self.norm_setSpanRelated()
         self.norm_setHoliday()
-        self.norm_setMonthHead()
-        self.norm_setMonthTail()
         self.modifyTimeBase()
         self.tp_origin.tunit = copy.deepcopy(self.tp.tunit)
 
@@ -502,26 +500,6 @@ class TimeUnit:
             self.tp.tunit[0] = int(tmp_parser[0])
             self.tp.tunit[1] = int(tmp_parser[1])
             self.tp.tunit[2] = int(tmp_parser[2])
-			
-    def norm_setMonthHead(self):
-        rule=u"(10)|(11)|(12)|([1-9])(?=(月初|月首))"
-        pattern = re.compile(rule)
-        match = pattern.search(self.exp_time)
-        if match is not None:
-            tmp_target = match.group()
-            tmp_parser = tmp_target.split()
-            self.tp.tunit[1] = int(tmp_parser[0])
-            self.tp.tunit[2] = 1
-			
-    def norm_setMonthTail(self):
-        rule=u"(10)|(11)|(12)|([1-9])(?=(月末|月尾|月底))"
-        pattern = re.compile(rule)
-        match = pattern.search(self.exp_time)
-        if match is not None:
-            tmp_target = match.group()
-            tmp_parser = tmp_target.split()
-            self.tp.tunit[1] = int(tmp_parser[0])
-            self.tp.tunit[2] = 28	
 
     def norm_setBaseRelated(self):
         """

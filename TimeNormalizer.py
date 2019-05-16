@@ -214,3 +214,8 @@ class TimeNormalizer:
             if tu.time.timestamp != 0:
                 res.append(tu)
         return res
+
+text="2012年3月末"
+t=TimeNormalizer()
+print(t.parse2date(text))
+print(t.parse(text))
