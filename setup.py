@@ -11,7 +11,7 @@ from setuptools import setup
 setup(
     name="TimeConverter",
     version="1.1.0",
-    keywords=("time", "nlp"),
+    keywords=["time", "nlp"],
     description="...",
     long_description="...",
     license="MIT Licence",

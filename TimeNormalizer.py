@@ -9,10 +9,11 @@ import regex as re
 import arrow
 import json
 import os
+import datetime as dt
 
-from StringPreHandler import StringPreHandler
-from TimePoint import TimePoint
-from TimeUnit import TimeUnit
+import TimeConverter.StringPreHandler as StringPreHandler
+import TimeConverter.TimePoint as TimePoint
+import TimeConverter.TimeUnit as TimeUnit
 
 # 时间表达式识别的主要工作类
 class TimeNormalizer:
@@ -23,8 +24,7 @@ class TimeNormalizer:
     # 这里对一些不规范的表达做转换
     def _filter(self, input_query):
         # 这里对于下个周末这种做转化 把个给移除掉
-        input_query = StringPreHandler.numberTranslator(input_query)
-
+        input_query = StringPreHandler.StringPreHandler.numberTranslator(input_query)
         rule = u"[0-9]月[0-9]"
         pattern = re.compile(rule)
         match = pattern.search(input_query)
@@ -53,6 +53,9 @@ class TimeNormalizer:
         input_query = input_query.replace('五一', '劳动节')
         input_query = input_query.replace('白天', '早上')
         input_query = input_query.replace('：', ':')
+        input_query = input_query.replace('月底', '月28号')
+        input_query = input_query.replace('月末', '月28号')
+        input_query = input_query.replace('月初', '月1号')
         return input_query
 
     def init(self):
@@ -73,6 +76,7 @@ class TimeNormalizer:
         with open(os.path.dirname(__file__) + '/resource/holi_lunar.json', 'r', encoding='utf-8') as f:
             holi_lunar = json.load(f)
         return pattern, holi_solar, holi_lunar
+
 
     def parse(self, target, timeBase=arrow.now()):
         """
@@ -117,22 +121,47 @@ class TimeNormalizer:
         else:
             if len(res) == 0:
                 dic['error'] = 'no time pattern could be extracted.'
+                dic["type"]="error"
             elif len(res) == 1:
                 dic['type'] = 'timestamp'
                 dic['timestamp'] = res[0].time.format("YYYY-MM-DD HH:mm:ss")
             else:
                 dic['type'] = 'timespan'
                 dic['timespan'] = [res[0].time.format("YYYY-MM-DD HH:mm:ss"), res[1].time.format("YYYY-MM-DD HH:mm:ss")]
-        return json.dumps(dic)
+        return dic
+
+    def parse2date(self, target, timeBase=arrow.now()):
+        """
+        TimeNormalizer的构造方法，timeBase取默认的系统当前时间
+        :param timeBase: 基准时间点
+        :param target: 待分析字符串
+        :return: 时间单元数组
+        """
+        self.isTimeSpan = False
+        self.invalidSpan = False
+        self.timeSpan = ''
+        self.target = self._filter(target)
+        self.timeBase = arrow.get(timeBase).format('YYYY-M-D-H-m-s')
+        self.nowTime = timeBase
+        self.oldTimeBase = self.timeBase
+        self.__preHandling()
+        self.timeToken = self.__timeEx()
+        dic = {}
+        res = self.timeToken
+        if len(res) == 1:
+            date = dt.datetime.strptime(res[0].time.format("YYYY-MM-DD"),"%Y-%m-%d")
+        else:
+            date = dt.datetime(1800,1,1,0,0)
+        return date
 
     def __preHandling(self):
         """
         待匹配字符串的清理空白符和语气助词以及大写数字转化的预处理
         :return:
         """
-        self.target = StringPreHandler.delKeyword(self.target, u"\\s+")  # 清理空白符
-        self.target = StringPreHandler.delKeyword(self.target, u"[的]+")  # 清理语气助词
-        self.target = StringPreHandler.numberTranslator(self.target)  # 大写数字转化
+        self.target = StringPreHandler.StringPreHandler.delKeyword(self.target, u"\\s+")  # 清理空白符
+        self.target = StringPreHandler.StringPreHandler.delKeyword(self.target, u"[的]+")  # 清理语气助词
+        self.target = StringPreHandler.StringPreHandler.numberTranslator(self.target)  # 大写数字转化
 
     def __timeEx(self):
         """
@@ -158,12 +187,12 @@ class TimeNormalizer:
             rpointer += 1
         res = []
         # 时间上下文： 前一个识别出来的时间会是下一个时间的上下文，用于处理：周六3点到5点这样的多个时间的识别，第二个5点应识别到是周六的。
-        contextTp = TimePoint()
-        print(self.timeBase)
-        print('temp',temp)
+        contextTp = TimePoint.TimePoint()
+        #print(self.timeBase)
+        #print('temp',temp)
         for i in range(0, rpointer):
             # 这里是一个类嵌套了一个类
-            res.append(TimeUnit(temp[i], self, contextTp))
+            res.append(TimeUnit.TimeUnit(temp[i], self, contextTp))
             # res[i].tp.tunit[3] = -1
             contextTp = res[i].tp
             # print(self.nowTime.year)

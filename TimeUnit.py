@@ -10,11 +10,11 @@
 import regex as re
 import arrow
 import copy
-from TimePoint import TimePoint
-from RangeTimeEnum import RangeTimeEnum
+from TimeConverter import TimePoint
+from TimeConverter import RangeTimeEnum
 
 try:
-    from LunarSolarConverter.LunarSolarConverter import *
+    from TimeConverter.LunarSolarConverter import *
 except:
     from LunarSolarConverter import *
 
@@ -24,9 +24,9 @@ class TimeUnit:
     def __init__(self, exp_time, normalizer, contextTp):
         self._noyear = False
         self.exp_time = exp_time
-        # print(exp_time)
+        #print(exp_time)
         self.normalizer = normalizer
-        self.tp = TimePoint()
+        self.tp = TimePoint.TimePoint()
         self.tp_origin = contextTp
         self.isFirstTimeSolveContext = True
         self.isAllDayTime = True
@@ -46,6 +46,8 @@ class TimeUnit:
         self.norm_setSpecial()
         self.norm_setSpanRelated()
         self.norm_setHoliday()
+        self.norm_setMonthHead()
+        self.norm_setMonthTail()
         self.modifyTimeBase()
         self.tp_origin.tunit = copy.deepcopy(self.tp.tunit)
 
@@ -222,7 +224,7 @@ class TimeUnit:
         match = pattern.search(self.exp_time)
         if match is not None:
             if self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“凌晨”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.day_break
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.day_break
             elif 12 <= self.tp.tunit[3] <= 23:
                 self.tp.tunit[3] -= 12
             elif self.tp.tunit[3] == 0:
@@ -236,7 +238,7 @@ class TimeUnit:
         match = pattern.search(self.exp_time)
         if match is not None:
             if self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“早上/早晨/早间”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.early_morning
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.early_morning
                 # 处理倾向于未来时间的情况
             elif 12 <= self.tp.tunit[3] <= 23:
                 self.tp.tunit[3] -= 12
@@ -250,7 +252,7 @@ class TimeUnit:
         match = pattern.search(self.exp_time)
         if match is not None:
             if self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“上午”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.morning
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.morning
             elif 12 <= self.tp.tunit[3] <= 23:
                 self.tp.tunit[3] -= 12
             elif self.tp.tunit[3] == 0:
@@ -266,7 +268,7 @@ class TimeUnit:
             if 0 <= self.tp.tunit[3] <= 10:
                 self.tp.tunit[3] += 12
             if self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“中午/午间”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.noon
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.noon
             # 处理倾向于未来时间的情况
             self.preferFuture(3)
             self.isAllDayTime = False
@@ -278,7 +280,7 @@ class TimeUnit:
             if 0 <= self.tp.tunit[3] <= 11:
                 self.tp.tunit[3] += 12
             if self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“下午|午后”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.afternoon
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.afternoon
             # 处理倾向于未来时间的情况
             self.preferFuture(3)
             self.isAllDayTime = False
@@ -292,7 +294,7 @@ class TimeUnit:
             elif self.tp.tunit[3] == 12:
                 self.tp.tunit[3] = 0
             elif self.tp.tunit[3] == -1:  # 增加对没有明确时间点，只写了“下午|午后”这种情况的处理
-                self.tp.tunit[3] = RangeTimeEnum.lateNight
+                self.tp.tunit[3] = RangeTimeEnum.RangeTimeEnum.lateNight
             # 处理倾向于未来时间的情况
             self.preferFuture(3)
             self.isAllDayTime = False
@@ -500,6 +502,26 @@ class TimeUnit:
             self.tp.tunit[0] = int(tmp_parser[0])
             self.tp.tunit[1] = int(tmp_parser[1])
             self.tp.tunit[2] = int(tmp_parser[2])
+			
+    def norm_setMonthHead(self):
+        rule=u"(10)|(11)|(12)|([1-9])(?=(月初|月首))"
+        pattern = re.compile(rule)
+        match = pattern.search(self.exp_time)
+        if match is not None:
+            tmp_target = match.group()
+            tmp_parser = tmp_target.split()
+            self.tp.tunit[1] = int(tmp_parser[0])
+            self.tp.tunit[2] = 1
+			
+    def norm_setMonthTail(self):
+        rule=u"(10)|(11)|(12)|([1-9])(?=(月末|月尾|月底))"
+        pattern = re.compile(rule)
+        match = pattern.search(self.exp_time)
+        if match is not None:
+            tmp_target = match.group()
+            tmp_parser = tmp_target.split()
+            self.tp.tunit[1] = int(tmp_parser[0])
+            self.tp.tunit[2] = 28	
 
     def norm_setBaseRelated(self):
         """
