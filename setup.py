@@ -6,9 +6,9 @@
 # @Software: PyCharm
 # @Changed : tianyuningmou
 
-import setuptools
+from setuptools import setup
 
-setuptools.setup(
+setup(
     name="TimeConverter",
     version="1.1.0",
     keywords=["time", "nlp"],
@@ -18,8 +18,7 @@ setuptools.setup(
     url="http://test.com",
     author="test",
     author_email="test@gmail.com",
-    #package_dir={'':'Time_NLP'}
-	packages=['normalizer','resource'],
+    packages=['', 'resource'],
     package_data={'resource': ['*.json', '*.pkl']},
     include_package_data=True,
     platforms="any",
